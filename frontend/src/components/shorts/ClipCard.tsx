@@ -14,7 +14,7 @@ interface ClipCardProps {
 
 export function ClipCard({ score, title, description, videoUrl, clipType, targetPlatform, confidence, onPlay }: ClipCardProps) {
   return (
-    <article className="clip-card group relative bg-surface-container-low rounded-xl flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_40px_rgba(208,188,255,0.15)] col-span-1">
+    <article onClick={onPlay} className="clip-card group relative cursor-pointer bg-surface-container-low rounded-xl flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_40px_rgba(208,188,255,0.15)] col-span-1">
       <div className="relative w-full aspect-[9/16] bg-surface-bright overflow-hidden">
         <video 
           src={videoUrl} 
@@ -56,14 +56,8 @@ export function ClipCard({ score, title, description, videoUrl, clipType, target
         <p className="font-body-md text-xs text-on-surface-variant line-clamp-2 mb-4 flex-grow">{description}</p>
         
         <div className="flex items-center gap-2 mt-auto pt-2 border-t border-white/5">
-          <button className="flex-grow flex items-center justify-center gap-1 bg-primary text-on-primary py-2 rounded-lg font-label-sm text-[12px] font-semibold hover:bg-primary-fixed transition-colors">
+          <button onClick={onPlay} className="flex-grow flex items-center justify-center gap-1 bg-primary text-on-primary py-2 rounded-lg font-label-sm text-[12px] font-semibold hover:bg-primary-fixed transition-colors">
             <Download size={14} /> Download
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-on-surface-variant hover:text-white transition-colors">
-            <Edit3 size={14} />
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-on-surface-variant hover:text-white transition-colors">
-            <Share2 size={14} />
           </button>
         </div>
       </div>

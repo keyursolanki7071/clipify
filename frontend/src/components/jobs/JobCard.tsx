@@ -13,6 +13,7 @@ export function JobCard({ job }: JobCardProps) {
     switch(status) {
       case 'completed': return <CheckCircle size={16} className="text-green-400" />;
       case 'failed': return <AlertCircle size={16} className="text-red-400" />;
+      case 'cancelled': return <AlertCircle size={16} className="text-orange-400" />;
       default: return <Loader2 size={16} className="text-secondary animate-spin" />;
     }
   };
@@ -44,12 +45,30 @@ export function JobCard({ job }: JobCardProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-xs z-10">
+      <div className="flex flex-col gap-xs z-10 flex-grow">
         <h3 className="font-body-md font-semibold text-on-surface line-clamp-2 leading-snug">
           {job.video_title || job.youtube_url}
         </h3>
-        <div className="flex items-center gap-sm text-on-surface-variant font-label-sm text-[12px] mt-xs">
-          <span className="flex items-center gap-1"><Clock size={12} /> {(job.progress || 0).toFixed(0)}%</span>
+        <div className="flex items-center justify-between mt-auto pt-sm">
+          <div className="flex items-center gap-sm text-on-surface-variant font-label-sm text-[12px]">
+            <span className="flex items-center gap-1"><Clock size={12} /> {(job.progress || 0).toFixed(0)}%</span>
+          </div>
+          {(job.status === 'cancelled' || job.status === 'failed') && (
+            <button 
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  await fetch(`http://localhost:8000/api/v1/jobs/${job.id}/restart`, { method: 'POST' });
+                  navigate(`/processing?job_id=${job.id}`);
+                } catch (err) {
+                  console.error(err);
+                }
+              }}
+              className="px-3 py-1 bg-primary/20 text-primary border border-primary/30 rounded font-label-sm text-[11px] hover:bg-primary/30 transition-colors z-20"
+            >
+              Restart
+            </button>
+          )}
         </div>
       </div>
     </div>

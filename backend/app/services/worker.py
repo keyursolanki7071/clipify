@@ -45,6 +45,9 @@ async def process_video_job(job_id: uuid.UUID):
                 job.video_duration = metadata.get('duration')
                 await session.commit()
             
+            job = await session.get(Job, job_id)
+            if job.status == "cancelled": return
+
             # 1. Download Video
             if not os.path.exists(video_path):
                 job.status = "downloading"
@@ -57,6 +60,8 @@ async def process_video_job(job_id: uuid.UUID):
                 await DownloaderService.run(job.youtube_url, job.id, on_progress)
                 job = await session.get(Job, job_id)
             
+            if job.status == "cancelled": return
+
             # 2. Transcription
             if not job.transcript:
                 job.status = "transcribing"
@@ -69,6 +74,9 @@ async def process_video_job(job_id: uuid.UUID):
                 job.transcript = transcript
                 await session.commit()
             
+            job = await session.get(Job, job_id)
+            if job.status == "cancelled": return
+
             # 3. Analyze
             if not job.viral_clips:
                 job.status = "analyzing"
@@ -80,6 +88,9 @@ async def process_video_job(job_id: uuid.UUID):
                 job.viral_clips = viral_clips
                 await session.commit()
             
+            job = await session.get(Job, job_id)
+            if job.status == "cancelled": return
+
             # 4. Clipping
             if not job.result_paths:
                 job.status = "clipping"
@@ -93,6 +104,14 @@ async def process_video_job(job_id: uuid.UUID):
                 job.result_paths = result_paths
                 await session.commit()
             
+        except asyncio.CancelledError:
+            print(f"Job {job_id} cancelled by system.")
+            job = await session.get(Job, job_id)
+            if job.status != "cancelled":
+                job.status = "failed"
+                job.error_message = "Server restarted or job was cancelled."
+            await session.commit()
+            raise # Propagate cancellation
         except Exception as e:
             # Log failure and update DB
             error_details = traceback.format_exc()

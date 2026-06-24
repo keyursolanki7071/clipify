@@ -15,6 +15,7 @@ class ViralClip(BaseModel):
     clip_type: Literal["story", "hot_take", "value_bomb", "relatable_moment", "shocking_stat"] = Field(description="The primary format/style of this clip")
     target_platform: Literal["TikTok", "Reels", "Shorts", "All"] = Field(description="The platform this clip is best suited for")
     confidence: Literal["high", "medium", "low"] = Field(description="Confidence that this clip will perform well")
+    social_media_caption: str = Field(description="A highly engaging caption for this clip including 3-5 viral hashtags, ready to copy-paste on TikTok/Reels/Shorts")
 
 class CurationResult(BaseModel):
     clips: list[ViralClip] = Field(description="List of viral clips found")
@@ -154,7 +155,8 @@ Return a JSON array conforming to the provided schema. Only include clips you'd 
                         "why_viral": c.why_viral,
                         "clip_type": c.clip_type,
                         "target_platform": c.target_platform,
-                        "confidence": c.confidence
+                        "confidence": c.confidence,
+                        "social_media_caption": c.social_media_caption
                     })
             except IndexError:
                 print(f"AI hallucinated Line IDs: start={c.start_line_id}, end={c.end_line_id}")

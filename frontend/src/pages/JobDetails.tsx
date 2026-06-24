@@ -74,6 +74,7 @@ export function JobDetails() {
             title={selectedClip.title}
             explanation={selectedClip.explanation}
             videoUrl={selectedClip.url}
+            caption={selectedClip.social_media_caption || `${selectedClip.title}\n\n#shorts #viral`}
             onClose={() => setSelectedClip(null)} 
           />
         )}

@@ -47,3 +47,48 @@ async def get_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db_session))
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
+
+@router.post("/{job_id}/cancel", response_model=JobResponse)
+async def cancel_job(job_id: uuid.UUID, db: AsyncSession = Depends(get_db_session)):
+    """
+    Cancel a running job.
+    """
+    job = await db.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job.status in ["completed", "failed"]:
+        raise HTTPException(status_code=400, detail="Cannot cancel a job that has already finished")
+        
+    job.status = "cancelled"
+    await db.commit()
+    await db.refresh(job)
+    return job
+
+@router.post("/{job_id}/restart", response_model=JobResponse)
+async def restart_job(
+    job_id: uuid.UUID, 
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db_session)
+):
+    """
+    Restart a cancelled or failed job.
+    """
+    job = await db.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    if job.status not in ["cancelled", "failed"]:
+        raise HTTPException(status_code=400, detail="Can only restart cancelled or failed jobs")
+        
+    job.status = "pending"
+    job.progress = 0.0
+    job.error_message = None
+    # We leave existing metadata/transcript intact so it doesn't have to re-do work it already finished!
+    
+    await db.commit()
+    await db.refresh(job)
+    
+    background_tasks.add_task(process_video_job, job.id)
+    
+    return job

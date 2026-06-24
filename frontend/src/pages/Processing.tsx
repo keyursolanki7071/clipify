@@ -12,6 +12,7 @@ export function Processing() {
   
   const [jobStatus, setJobStatus] = useState<string>('pending');
   const [jobData, setJobData] = useState<any>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (!jobId) {
@@ -98,12 +99,30 @@ export function Processing() {
             <Timer className="text-secondary" size={20} />
             <span className="font-mono-code text-[14px] text-secondary">Status: {jobStatus.toUpperCase()}</span>
           </div>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-4 py-2 rounded-lg border border-white/10 text-on-surface-variant font-label-sm text-label-sm hover:bg-white/5 transition-colors"
-          >
-            Cancel
-          </button>
+          <div className="flex items-center gap-sm">
+            <button 
+              onClick={async () => {
+                setIsCancelling(true);
+                try {
+                  await fetch(`http://localhost:8000/api/v1/jobs/${jobId}/cancel`, { method: 'POST' });
+                  navigate('/jobs');
+                } catch (e) {
+                  console.error(e);
+                  setIsCancelling(false);
+                }
+              }}
+              disabled={isCancelling}
+              className="px-4 py-2 rounded-lg border border-red-500/30 text-red-400 font-label-sm text-label-sm hover:bg-red-500/10 transition-colors disabled:opacity-50"
+            >
+              {isCancelling ? 'Cancelling...' : 'Cancel Job'}
+            </button>
+            <button 
+              onClick={() => navigate('/jobs')}
+              className="px-4 py-2 rounded-lg border border-white/10 text-on-surface-variant font-label-sm text-label-sm hover:bg-white/5 transition-colors bg-surface-container-highest"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </main>
