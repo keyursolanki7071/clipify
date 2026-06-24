@@ -5,7 +5,9 @@ from app.models.job import Job
 from app.services.pipeline.downloader import DownloaderService
 from app.services.pipeline.transcriber import TranscriberService
 from app.services.pipeline.analyzer import AnalyzerService
+from app.services.pipeline.clipper import ClipperService
 import os
+import traceback
 
 async def update_job_progress(job_id: uuid.UUID, progress: float):
     """Fire-and-forget helper to update progress without blocking."""
@@ -25,7 +27,8 @@ async def process_video_job(job_id: uuid.UUID):
             return
             
         try:
-            video_path = f"tmp/{job_id}.mp4"
+            os.makedirs(f"tmp/{job_id}", exist_ok=True)
+            video_path = f"tmp/{job_id}/source.mp4"
             
             # 0. Extract Metadata
             if not job.video_title:
@@ -64,33 +67,30 @@ async def process_video_job(job_id: uuid.UUID):
                 job.status = "analyzing"
                 await session.commit()
                 
-                viral_clips = await AnalyzerService.run(job.transcript, job.video_duration, job_id)
+                viral_clips = await AnalyzerService.run(job.transcript, job.video_duration, job.video_title, job_id)
                 
                 job = await session.get(Job, job_id)
                 job.viral_clips = viral_clips
                 await session.commit()
             
-            # 4. Simulate clipping
-            job.status = "clipping"
-            await session.commit()
-            await asyncio.sleep(3)
-            
-            # 5. Simulate completion
-            job.status = "completed"
-            job.progress = 100.0
-            job.result_paths = {
-                "clips": [
-                    "/dummy/path/clip1.mp4",
-                    "/dummy/path/clip2.mp4"
-                ],
-                "source_video": video_path
-            }
-            await session.commit()
+            # 4. Clipping
+            if not job.result_paths:
+                job.status = "clipping"
+                await session.commit()
+                
+                result_paths = await ClipperService.run(video_path, job.viral_clips, job_id)
+                
+                job = await session.get(Job, job_id)
+                job.status = "completed"
+                job.progress = 100.0
+                job.result_paths = result_paths
+                await session.commit()
             
         except Exception as e:
             # Log failure and update DB
-            print(f"Job failed: {e}")
-            job = await session.get(Job, job_id) # Refresh instance
+            error_details = traceback.format_exc()
+            print(f"Job {job_id} failed: {e}\n{error_details}")
+            job = await session.get(Job, job_id)
             job.status = "failed"
-            job.error_message = str(e)
+            job.error_message = str(e) or "Unknown error occurred (see logs)"
             await session.commit()

@@ -22,7 +22,8 @@ class DownloaderService:
 
     @staticmethod
     def _download_sync(url: str, job_id: uuid.UUID, update_progress_cb: Callable[[float], Awaitable[None]], loop: asyncio.AbstractEventLoop) -> str:
-        output_path = f"tmp/{job_id}.mp4"
+        os.makedirs(f"tmp/{job_id}", exist_ok=True)
+        output_path = f"tmp/{job_id}/source.mp4"
         
         local_app_data = os.environ.get('LOCALAPPDATA', '')
         ffmpeg_path = os.path.join(local_app_data, 'Microsoft', 'WinGet', 'Packages', 'Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe', 'ffmpeg-8.1.1-full_build', 'bin')

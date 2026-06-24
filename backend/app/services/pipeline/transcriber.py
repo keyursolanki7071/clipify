@@ -16,7 +16,7 @@ class TranscriberService:
     @staticmethod
     def _get_vtt_file(job_id: uuid.UUID) -> str | None:
         """Finds the downloaded VTT file for the given job_id."""
-        pattern = f"tmp/{job_id}.*.vtt"
+        pattern = f"tmp/{job_id}/*.vtt"
         files = glob.glob(pattern)
         if files:
             return files[0]
@@ -51,7 +51,7 @@ class TranscriberService:
             raise ValueError("OPENAI_API_KEY is not set in .env. Cannot fallback to Whisper.")
         
         # Extract audio using ffmpeg to ensure we are uploading just audio and staying under limits
-        audio_path = f"tmp/{job_id}.mp3"
+        audio_path = f"tmp/{job_id}/audio.mp3"
         local_app_data = os.environ.get('LOCALAPPDATA', '')
         ffmpeg_path = os.path.join(local_app_data, 'Microsoft', 'WinGet', 'Packages', 'Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe', 'ffmpeg-8.1.1-full_build', 'bin', 'ffmpeg.exe')
         

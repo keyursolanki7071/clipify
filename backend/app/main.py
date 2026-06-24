@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.api.routes import jobs
@@ -29,6 +31,9 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 app.include_router(jobs.router, prefix=settings.API_V1_STR)
+
+os.makedirs("tmp", exist_ok=True)
+app.mount("/media", StaticFiles(directory="tmp"), name="media")
 
 @app.get("/health", response_class=JSONResponse)
 async def health_check():
