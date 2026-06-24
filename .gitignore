@@ -10,3 +10,6 @@ venv/
 env/
 .idea/
 .vscode/
+.agents/
+.venv/
+.python-version
