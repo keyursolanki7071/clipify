@@ -82,6 +82,12 @@ Good hooks are one of:
 
 If the segment doesn't open with a natural hook from the transcript, expand the start timestamp slightly to include one, or skip the segment entirely.
 
+## MULTI-LINGUAL CAPABILITIES (CRITICAL)
+The transcript may be in Hindi, Hinglish, Spanish, or any other language. 
+You are fluent in all languages and cultural slang. 
+Analyze the humor, emotion, and context NATIVELY in the original language to find the absolute best viral hooks.
+However, you MUST output your JSON metadata (`hook`, `why_viral`, `clip_type`, etc.) entirely in ENGLISH.
+
 ## TIMESTAMPS & DURATION STRICT RULES (CRITICAL)
 1. Do NOT just extract a single sentence or a single transcript line! A single line is usually 1-5 seconds long.
 2. You MUST combine multiple continuous, sequential transcript lines to form a complete, coherent segment.
@@ -97,9 +103,9 @@ Duration MUST be between 30 and 60 seconds. Do not force clips if strong ones do
 {formatted_transcript}
 """
 
-        print("Analyzing transcript with OpenAI (gpt-4o-mini)...")
+        print("Analyzing transcript with OpenAI (gpt-4o)...")
         completion = await client.beta.chat.completions.parse(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a viral short-form content strategist."},
                 {"role": "user", "content": prompt}
