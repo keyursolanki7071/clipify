@@ -3,6 +3,7 @@ import uuid
 from app.db.engine import async_session_maker
 from app.models.job import Job
 from app.services.pipeline.downloader import DownloaderService
+from app.services.pipeline.transcriber import TranscriberService
 
 async def update_job_progress(job_id: uuid.UUID, progress: float):
     """Fire-and-forget helper to update progress without blocking."""
@@ -41,11 +42,16 @@ async def process_video_job(job_id: uuid.UUID):
             # Refresh job from DB after long-running operation
             job = await session.get(Job, job_id)
             
-            # 2. Simulate transcription
+            # 2. Transcription
             job.status = "transcribing"
             job.progress = 0.0
             await session.commit()
-            await asyncio.sleep(3)
+            
+            transcript = await TranscriberService.run(video_path, job_id)
+            
+            job = await session.get(Job, job_id)
+            job.transcript = transcript
+            await session.commit()
             
             # 3. Simulate analyzing
             job.status = "analyzing"

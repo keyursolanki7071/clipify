@@ -82,6 +82,10 @@ class DownloaderService:
             'quiet': True,
             'no_warnings': True,
             'progress_hooks': [progress_hook],
+            'writesubtitles': True,
+            'writeautomaticsub': True,
+            'subtitleslangs': ['en.*'],
+            'subtitlesformat': 'vtt'
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
