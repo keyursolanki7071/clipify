@@ -82,16 +82,18 @@ class DownloaderService:
             'ffmpeg_location': ffmpeg_path if os.path.exists(ffmpeg_path) else None,
             'quiet': True,
             'no_warnings': True,
-            'progress_hooks': [progress_hook],
-            'writesubtitles': True,
-            'writeautomaticsub': True,
-            'subtitleslangs': ['en.*'],
-            'subtitlesformat': 'vtt'
+            'progress_hooks': [progress_hook]
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-            
+            try:
+                ydl.download([url])
+            except Exception as e:
+                if os.path.exists(output_path):
+                    print(f"yt-dlp threw an error (likely subtitles 429) but video was downloaded: {e}")
+                else:
+                    raise e
+                    
         return output_path
 
     @staticmethod
