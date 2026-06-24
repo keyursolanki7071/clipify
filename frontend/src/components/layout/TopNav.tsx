@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { PlaySquare, Clipboard, UserCircle } from 'lucide-react';
+import { PlaySquare, Clipboard } from 'lucide-react';
 
 export function TopNav() {
   return (
@@ -12,15 +12,6 @@ export function TopNav() {
             Clipify AI
           </span>
         </Link>
-        <div className="flex items-center gap-md">
-          <button className="hidden md:flex items-center gap-sm px-4 py-2 rounded-lg font-label-sm text-label-sm text-on-surface-variant font-medium hover:text-primary transition-colors duration-200 active:scale-95 transition-transform border border-white/10 hover:border-primary/50">
-            <Clipboard size={18} />
-            Paste URL
-          </button>
-          <button className="flex items-center justify-center w-10 h-10 rounded-full bg-surface-variant text-on-surface-variant hover:text-primary transition-colors duration-200 active:scale-95 transition-transform">
-            <UserCircle size={24} />
-          </button>
-        </div>
       </div>
     </nav>
   );
