@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
@@ -8,9 +8,29 @@ import { Sparkles, Link, Zap, Mic, MessageSquare, BookOpen, Dumbbell } from 'luc
 
 export function Home() {
   const navigate = useNavigate();
+  const [url, setUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleGenerate = () => {
-    navigate('/processing');
+  const handleGenerate = async () => {
+    if (!url) return;
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/jobs/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ youtube_url: url }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        navigate(`/processing?job_id=${data.id}`);
+      } else {
+        console.error("Failed to start job");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -32,10 +52,13 @@ export function Home() {
         <Input 
           icon={<Link size={20} />} 
           placeholder="https://youtube.com/watch?v=..."
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          disabled={isSubmitting}
         >
-          <Button onClick={handleGenerate}>
+          <Button onClick={handleGenerate} disabled={isSubmitting || !url}>
             <Zap size={20} />
-            Generate Shorts
+            {isSubmitting ? 'Starting...' : 'Generate Shorts'}
           </Button>
         </Input>
 

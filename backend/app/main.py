@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
+from app.api.routes import jobs
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,6 +27,8 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+app.include_router(jobs.router, prefix=settings.API_V1_STR)
 
 @app.get("/health", response_class=JSONResponse)
 async def health_check():
