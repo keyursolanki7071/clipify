@@ -18,7 +18,11 @@ export function Processing() {
       return;
     }
 
+    let isPolling = true;
+
     const pollJob = async () => {
+      if (!isPolling) return;
+      
       try {
         const response = await fetch(`http://localhost:8000/api/v1/jobs/${jobId}`);
         if (response.ok) {
@@ -27,19 +31,25 @@ export function Processing() {
           setJobStatus(data.status);
           
           if (data.status === 'completed') {
+            isPolling = false;
             navigate(`/shorts?job_id=${jobId}`);
+            return;
           }
         }
       } catch (err) {
         console.error("Error polling job status", err);
       }
+
+      if (isPolling) {
+        setTimeout(pollJob, 2000);
+      }
     };
 
-    // Poll immediately, then every 2 seconds
     pollJob();
-    const interval = setInterval(pollJob, 2000);
     
-    return () => clearInterval(interval);
+    return () => {
+      isPolling = false;
+    };
   }, [jobId, navigate]);
 
   const getStepStatus = (stepName: string) => {
