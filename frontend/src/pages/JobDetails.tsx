@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { UserCircle } from 'lucide-react';
 import { ClipCard } from '../components/shorts/ClipCard';
 import { PreviewModal } from '../components/shorts/PreviewModal';
 
-export function YourShorts() {
+export function JobDetails() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const jobId = queryParams.get('job_id');
+  const { id: jobId } = useParams<{ id: string }>();
 
   const [selectedClip, setSelectedClip] = useState<any>(null);
   const [jobData, setJobData] = useState<any>(null);

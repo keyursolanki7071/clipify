@@ -17,7 +17,10 @@ class DownloaderService:
             return {
                 'title': info.get('title'),
                 'thumbnail': info.get('thumbnail'),
-                'duration': info.get('duration')
+                'duration': info.get('duration'),
+                'channel': info.get('uploader') or info.get('channel'),
+                'categories': info.get('categories', []),
+                'tags': info.get('tags', [])
             }
 
     @staticmethod

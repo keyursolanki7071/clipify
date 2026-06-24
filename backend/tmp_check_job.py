@@ -16,6 +16,7 @@ async def main():
             job.result_paths = None
             job.status = "transcribed"
             job.error_message = None
+            job.video_title = None  # Force re-fetching metadata
             await session.commit()
             print("Job state reset to 'transcribed'.")
         else:

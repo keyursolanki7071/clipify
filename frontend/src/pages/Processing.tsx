@@ -32,7 +32,7 @@ export function Processing() {
           
           if (data.status === 'completed') {
             isPolling = false;
-            navigate(`/shorts?job_id=${jobId}`);
+            navigate(`/jobs/${jobId}`);
             return;
           }
         }

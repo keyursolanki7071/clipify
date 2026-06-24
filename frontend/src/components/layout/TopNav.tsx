@@ -12,6 +12,12 @@ export function TopNav() {
             Clipify AI
           </span>
         </Link>
+        <div className="flex items-center gap-md">
+          <Link to="/jobs" className="flex items-center gap-xs font-label-md text-on-surface-variant hover:text-primary transition-colors">
+            <Clipboard size={18} />
+            <span>Your Jobs</span>
+          </Link>
+        </div>
       </div>
     </nav>
   );

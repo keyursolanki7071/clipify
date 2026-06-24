@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { TopNav } from './components/layout/TopNav';
 import { Home } from './pages/Home';
 import { Processing } from './pages/Processing';
-import { YourShorts } from './pages/YourShorts';
+import { JobDetails } from './pages/JobDetails';
+import { JobsList } from './pages/JobsList';
 
 export default function App() {
   return (
@@ -20,7 +21,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/processing" element={<Processing />} />
-          <Route path="/shorts" element={<YourShorts />} />
+          <Route path="/jobs" element={<JobsList />} />
+          <Route path="/jobs/:id" element={<JobDetails />} />
         </Routes>
 
         <footer className="bg-surface/50 backdrop-blur-md text-primary font-label-sm text-label-sm w-full py-xl border-t border-white/5 relative z-10 mt-auto">

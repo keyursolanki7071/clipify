@@ -33,7 +33,14 @@ async def process_video_job(job_id: uuid.UUID):
             # 0. Extract Metadata
             if not job.video_title:
                 metadata = await asyncio.to_thread(DownloaderService.extract_metadata, job.youtube_url)
-                job.video_title = metadata.get('title')
+                title = metadata.get('title', 'Unknown Video')
+                channel = metadata.get('channel', 'Unknown Channel')
+                cats = metadata.get('categories', [])
+                tags = metadata.get('tags', [])[:10]
+                
+                context_str = f"Title: {title} | Channel: {channel} | Categories: {', '.join(cats)} | Tags: {', '.join(tags)}"
+                
+                job.video_title = context_str
                 job.video_thumbnail = metadata.get('thumbnail')
                 job.video_duration = metadata.get('duration')
                 await session.commit()

@@ -12,6 +12,8 @@ class JobResponse(BaseModel):
     video_title: str | None = None
     video_thumbnail: str | None = None
     video_duration: int | None = None
+    result_paths: dict | None = None
+    error_message: str | None = None
 
     model_config = {
         "from_attributes": True

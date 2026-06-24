@@ -8,6 +8,15 @@ from app.services.worker import process_video_job
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
+@router.get("/", response_model=list[JobResponse])
+async def list_jobs(db: AsyncSession = Depends(get_db_session)):
+    """
+    Get a list of all jobs, sorted by most recent first.
+    """
+    from sqlalchemy import select
+    result = await db.execute(select(Job).order_by(Job.created_at.desc()))
+    return result.scalars().all()
+
 @router.post("/", response_model=JobResponse, status_code=202)
 async def create_job(
     job_in: JobCreate,
