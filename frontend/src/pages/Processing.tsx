@@ -1,18 +1,57 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, User, Timer } from 'lucide-react';
 import { ProcessingStep } from '../components/processing/ProcessingStep';
 
 export function Processing() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const jobId = queryParams.get('job_id');
+  
+  const [jobStatus, setJobStatus] = useState<string>('pending');
 
   useEffect(() => {
-    // Simulate processing time
-    const timer = setTimeout(() => {
-      navigate('/shorts');
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    if (!jobId) {
+      navigate('/');
+      return;
+    }
+
+    const pollJob = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/jobs/${jobId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setJobStatus(data.status);
+          
+          if (data.status === 'completed') {
+            navigate(`/shorts?job_id=${jobId}`);
+          }
+        }
+      } catch (err) {
+        console.error("Error polling job status", err);
+      }
+    };
+
+    // Poll immediately, then every 2 seconds
+    pollJob();
+    const interval = setInterval(pollJob, 2000);
+    
+    return () => clearInterval(interval);
+  }, [jobId, navigate]);
+
+  const getStepStatus = (stepName: string) => {
+    const order = ['pending', 'downloading', 'transcribing', 'analyzing', 'clipping', 'completed'];
+    let currentStatus = jobStatus;
+    if (currentStatus === 'pending') currentStatus = 'downloading'; // visual fallback
+    
+    const currentIndex = order.indexOf(currentStatus);
+    const stepIndex = order.indexOf(stepName);
+    
+    if (currentIndex > stepIndex) return 'completed';
+    if (currentIndex === stepIndex) return 'active';
+    return 'upcoming';
+  };
 
   return (
     <main className="relative z-10 flex flex-col items-center justify-center min-h-screen p-md md:p-xl flex-grow pt-[120px]">
@@ -43,15 +82,16 @@ export function Processing() {
         <div className="flex flex-col gap-md relative">
           <div className="absolute left-[15px] top-[20px] bottom-[20px] w-[2px] bg-surface-container-highest z-0"></div>
           
-          <ProcessingStep status="completed" title="Downloading Video" />
-          <ProcessingStep status="active" title="Understanding Content" />
-          <ProcessingStep status="upcoming" title="Finding Viral Moments" />
+          <ProcessingStep status={getStepStatus('downloading')} title="Downloading Video" />
+          <ProcessingStep status={getStepStatus('transcribing')} title="Transcribing Audio" />
+          <ProcessingStep status={getStepStatus('analyzing')} title="Finding Viral Moments" />
+          <ProcessingStep status={getStepStatus('clipping')} title="Cutting & Captioning" />
         </div>
 
         <div className="pt-md border-t border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-sm">
             <Timer className="text-secondary" size={20} />
-            <span className="font-mono-code text-[14px] text-secondary">Estimated completion: 5 seconds</span>
+            <span className="font-mono-code text-[14px] text-secondary">Status: {jobStatus.toUpperCase()}</span>
           </div>
           <button 
             onClick={() => navigate('/')}
