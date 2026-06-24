@@ -28,11 +28,6 @@ export default function App() {
         <footer className="bg-surface/50 backdrop-blur-md text-primary font-label-sm text-label-sm w-full py-xl border-t border-white/5 relative z-10 mt-auto">
           <div className="flex flex-col md:flex-row justify-between items-center px-lg max-w-container-max mx-auto gap-md">
             <span className="text-label-sm font-bold text-on-surface">© 2024 Clipify AI. Made with AI</span>
-            <div className="flex items-center gap-md">
-              <a className="text-on-surface-variant hover:text-on-surface transition-opacity cursor-pointer" href="#">Privacy</a>
-              <a className="text-on-surface-variant hover:text-on-surface transition-opacity cursor-pointer" href="#">Terms</a>
-              <a className="text-on-surface-variant hover:text-on-surface transition-opacity cursor-pointer" href="#">Help</a>
-            </div>
           </div>
         </footer>
       </div>

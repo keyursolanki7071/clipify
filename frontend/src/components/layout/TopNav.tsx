@@ -13,8 +13,8 @@ export function TopNav() {
           </span>
         </Link>
         <div className="flex items-center gap-md">
-          <Link to="/jobs" className="flex items-center gap-xs font-label-md text-on-surface-variant hover:text-primary transition-colors">
-            <Clipboard size={18} />
+          <Link to="/jobs" className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-primary/10 hover:border-primary/30 text-on-surface hover:text-primary transition-all font-bold text-[14px] shadow-sm">
+            <Clipboard size={16} />
             <span>Your Jobs</span>
           </Link>
         </div>
