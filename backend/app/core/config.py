@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     # Supabase Connection string
     SUPABASE_DATABASE_URI: str
     
+    # OpenAI
+    OPENAI_API_KEY: str | None = None
+    
     # Adding CORS origins (frontend is typically Vite on 5173 or React on 3000)
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:5173",

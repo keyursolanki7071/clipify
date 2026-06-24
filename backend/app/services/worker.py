@@ -4,6 +4,8 @@ from app.db.engine import async_session_maker
 from app.models.job import Job
 from app.services.pipeline.downloader import DownloaderService
 from app.services.pipeline.transcriber import TranscriberService
+from app.services.pipeline.analyzer import AnalyzerService
+import os
 
 async def update_job_progress(job_id: uuid.UUID, progress: float):
     """Fire-and-forget helper to update progress without blocking."""
@@ -23,40 +25,50 @@ async def process_video_job(job_id: uuid.UUID):
             return
             
         try:
+            video_path = f"tmp/{job_id}.mp4"
+            
             # 0. Extract Metadata
-            metadata = await asyncio.to_thread(DownloaderService.extract_metadata, job.youtube_url)
-            job.video_title = metadata.get('title')
-            job.video_thumbnail = metadata.get('thumbnail')
-            job.video_duration = metadata.get('duration')
+            if not job.video_title:
+                metadata = await asyncio.to_thread(DownloaderService.extract_metadata, job.youtube_url)
+                job.video_title = metadata.get('title')
+                job.video_thumbnail = metadata.get('thumbnail')
+                job.video_duration = metadata.get('duration')
+                await session.commit()
             
             # 1. Download Video
-            job.status = "downloading"
-            job.progress = 0.0
-            await session.commit()
-            
-            async def on_progress(percentage: float):
-                await update_job_progress(job_id, percentage)
-            
-            video_path = await DownloaderService.run(job.youtube_url, job.id, on_progress)
-            
-            # Refresh job from DB after long-running operation
-            job = await session.get(Job, job_id)
+            if not os.path.exists(video_path):
+                job.status = "downloading"
+                job.progress = 0.0
+                await session.commit()
+                
+                async def on_progress(percentage: float):
+                    await update_job_progress(job_id, percentage)
+                
+                await DownloaderService.run(job.youtube_url, job.id, on_progress)
+                job = await session.get(Job, job_id)
             
             # 2. Transcription
-            job.status = "transcribing"
-            job.progress = 0.0
-            await session.commit()
+            if not job.transcript:
+                job.status = "transcribing"
+                job.progress = 0.0
+                await session.commit()
+                
+                transcript = await TranscriberService.run(video_path, job_id)
+                
+                job = await session.get(Job, job_id)
+                job.transcript = transcript
+                await session.commit()
             
-            transcript = await TranscriberService.run(video_path, job_id)
-            
-            job = await session.get(Job, job_id)
-            job.transcript = transcript
-            await session.commit()
-            
-            # 3. Simulate analyzing
-            job.status = "analyzing"
-            await session.commit()
-            await asyncio.sleep(3)
+            # 3. Analyze
+            if not job.viral_clips:
+                job.status = "analyzing"
+                await session.commit()
+                
+                viral_clips = await AnalyzerService.run(job.transcript, job.video_duration, job_id)
+                
+                job = await session.get(Job, job_id)
+                job.viral_clips = viral_clips
+                await session.commit()
             
             # 4. Simulate clipping
             job.status = "clipping"

@@ -4,6 +4,7 @@ import webvtt
 import asyncio
 from openai import AsyncOpenAI
 import uuid
+from app.core.config import settings
 
 class TranscriberService:
     @staticmethod
@@ -45,9 +46,9 @@ class TranscriberService:
 
         print("No native captions found. Falling back to OpenAI Whisper...")
         # 2. Fallback to OpenAI Whisper
-        client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
         if not client.api_key:
-            raise ValueError("OPENAI_API_KEY is not set. Cannot fallback to Whisper.")
+            raise ValueError("OPENAI_API_KEY is not set in .env. Cannot fallback to Whisper.")
         
         # Extract audio using ffmpeg to ensure we are uploading just audio and staying under limits
         audio_path = f"tmp/{job_id}.mp3"

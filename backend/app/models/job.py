@@ -20,3 +20,4 @@ class Job(Base):
     error_message: Mapped[str | None] = mapped_column(String, nullable=True)
     result_paths: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     transcript: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    viral_clips: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
