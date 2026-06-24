@@ -13,3 +13,4 @@ env/
 .agents/
 .venv/
 .python-version
+backend/tmp

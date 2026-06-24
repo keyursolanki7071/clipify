@@ -1,11 +1,18 @@
 import React from 'react';
 
-export function AuroraProgress() {
+interface AuroraProgressProps {
+  progress?: number;
+}
+
+export function AuroraProgress({ progress }: AuroraProgressProps) {
+  const widthPercent = progress !== undefined ? `${Math.max(0, Math.min(100, progress))}%` : '66.66%';
+  
   return (
     <div className="w-full h-1 bg-surface-container-highest rounded-full mt-sm overflow-hidden">
       <div 
-        className="h-full w-2/3 rounded-full" 
+        className="h-full rounded-full transition-all duration-300 ease-out" 
         style={{
+          width: widthPercent,
           background: 'linear-gradient(90deg, #d0bcff, #adc6ff, #a078ff, #d0bcff)',
           backgroundSize: '300% 100%',
           animation: 'move-aurora 3s linear infinite'

@@ -10,6 +10,7 @@ export function Processing() {
   const jobId = queryParams.get('job_id');
   
   const [jobStatus, setJobStatus] = useState<string>('pending');
+  const [jobData, setJobData] = useState<any>(null);
 
   useEffect(() => {
     if (!jobId) {
@@ -22,6 +23,7 @@ export function Processing() {
         const response = await fetch(`http://localhost:8000/api/v1/jobs/${jobId}`);
         if (response.ok) {
           const data = await response.json();
+          setJobData(data);
           setJobStatus(data.status);
           
           if (data.status === 'completed') {
@@ -65,24 +67,34 @@ export function Processing() {
           <p className="font-body-md text-on-surface-variant">Our AI is analyzing your video to find the best moments.</p>
         </div>
 
+        {jobData?.video_title && (
         <div className="glass-panel rounded-xl p-md flex items-center gap-md bg-surface-container-highest/50">
           <div className="w-24 h-16 rounded-lg overflow-hidden relative shrink-0 border border-white/10">
-            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=300&auto=format&fit=crop" alt="Thumbnail" className="w-full h-full object-cover opacity-80" />
+            <img src={jobData.video_thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=300&auto=format&fit=crop"} alt="Thumbnail" className="w-full h-full object-cover opacity-80" />
             <div className="absolute inset-0 bg-gradient-to-t from-surface/80 to-transparent"></div>
-            <span className="absolute bottom-1 right-1 font-label-sm text-[10px] bg-surface/90 px-1 py-0.5 rounded text-on-surface backdrop-blur-sm">12:45</span>
+            {jobData.video_duration && (
+              <span className="absolute bottom-1 right-1 font-label-sm text-[10px] bg-surface/90 px-1 py-0.5 rounded text-on-surface backdrop-blur-sm">
+                {Math.floor(jobData.video_duration / 60)}:{(jobData.video_duration % 60).toString().padStart(2, '0')}
+              </span>
+            )}
           </div>
           <div className="flex-col overflow-hidden">
-            <h3 className="font-body-md font-medium text-on-surface truncate">The Future of AI in Design</h3>
+            <h3 className="font-body-md font-medium text-on-surface truncate">{jobData.video_title}</h3>
             <p className="font-label-sm text-[11px] text-on-surface-variant truncate mt-1 flex items-center gap-1">
-              <User size={14} /> Tech Today
+              <User size={14} /> YouTube
             </p>
           </div>
         </div>
+        )}
 
         <div className="flex flex-col gap-md relative">
           <div className="absolute left-[15px] top-[20px] bottom-[20px] w-[2px] bg-surface-container-highest z-0"></div>
           
-          <ProcessingStep status={getStepStatus('downloading')} title="Downloading Video" />
+          <ProcessingStep 
+            status={getStepStatus('downloading')} 
+            title={`Downloading Video${jobStatus === 'downloading' && jobData?.progress ? ` (${jobData.progress}%)` : ''}`} 
+            progress={jobStatus === 'downloading' ? jobData?.progress : undefined}
+          />
           <ProcessingStep status={getStepStatus('transcribing')} title="Transcribing Audio" />
           <ProcessingStep status={getStepStatus('analyzing')} title="Finding Viral Moments" />
           <ProcessingStep status={getStepStatus('clipping')} title="Cutting & Captioning" />

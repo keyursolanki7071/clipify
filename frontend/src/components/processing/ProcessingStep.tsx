@@ -7,9 +7,10 @@ export type StepStatus = 'completed' | 'active' | 'upcoming';
 interface ProcessingStepProps {
   status: StepStatus;
   title: string;
+  progress?: number;
 }
 
-export function ProcessingStep({ status, title }: ProcessingStepProps) {
+export function ProcessingStep({ status, title, progress }: ProcessingStepProps) {
   const getOpacity = () => {
     if (status === 'completed') return 'opacity-50';
     if (status === 'upcoming') return 'opacity-30';
@@ -31,7 +32,7 @@ export function ProcessingStep({ status, title }: ProcessingStepProps) {
         <span className={`font-body-md ${status === 'active' ? 'text-primary font-medium' : 'text-on-surface-variant'}`}>
           {title}
         </span>
-        {status === 'active' && <AuroraProgress />}
+        {status === 'active' && <AuroraProgress progress={progress} />}
       </div>
     </div>
   );
