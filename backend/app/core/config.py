@@ -4,6 +4,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Clipify"
     API_V1_STR: str = "/api/v1"
     
+    # Supabase Connection string
+    SUPABASE_DATABASE_URI: str
+    
     # Adding CORS origins (frontend is typically Vite on 5173 or React on 3000)
     BACKEND_CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
