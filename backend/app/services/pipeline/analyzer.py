@@ -103,9 +103,9 @@ Duration MUST be between 30 and 60 seconds. Do not force clips if strong ones do
 {formatted_transcript}
 """
 
-        print("Analyzing transcript with OpenAI (gpt-4o)...")
+        print("Analyzing transcript with OpenAI (gpt-4o-mini)...")
         completion = await client.beta.chat.completions.parse(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a viral short-form content strategist."},
                 {"role": "user", "content": prompt}
