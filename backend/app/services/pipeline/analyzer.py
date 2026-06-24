@@ -82,9 +82,16 @@ Good hooks are one of:
 
 If the segment doesn't open with a natural hook from the transcript, expand the start timestamp slightly to include one, or skip the segment entirely.
 
+## TIMESTAMPS & DURATION STRICT RULES (CRITICAL)
+1. Do NOT just extract a single sentence or a single transcript line! A single line is usually 1-5 seconds long.
+2. You MUST combine multiple continuous, sequential transcript lines to form a complete, coherent segment.
+3. The `start_time` must be the exact start timestamp of the first line (the hook).
+4. The `end_time` must be the exact end timestamp of a MUCH LATER line so that the total `duration` (end_time - start_time) is strictly between 30 and 60 seconds.
+5. Ensure the segment has a natural conclusion. Do not cut off mid-word.
+
 ## OUTPUT FORMAT
 Return a JSON array conforming to the provided schema. Only include clips you'd rate confidence: high or medium. 
-Duration must be between 25 and 90 seconds. Do not force clips if strong ones don't exist — return an empty array with a note explaining why.
+Duration MUST be between 30 and 60 seconds. Do not force clips if strong ones don't exist — return an empty array with a note explaining why.
 
 ## TRANSCRIPT
 {formatted_transcript}
