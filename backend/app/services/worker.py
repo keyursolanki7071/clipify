@@ -82,7 +82,7 @@ async def process_video_job(job_id: uuid.UUID):
                 job.status = "analyzing"
                 await session.commit()
                 
-                viral_clips = await AnalyzerService.run(job.transcript, job.video_duration, job.video_title, job_id)
+                viral_clips = await AnalyzerService.run(job.transcript, job.video_duration, job.video_title, job_id, video_path)
                 
                 job = await session.get(Job, job_id)
                 job.viral_clips = viral_clips

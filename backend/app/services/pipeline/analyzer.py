@@ -6,6 +6,9 @@ from openai import AsyncOpenAI
 from app.core.config import settings
 from typing import Literal
 from app.services.pipeline.prompts import get_classification_prompt, get_candidate_generation_prompt, get_review_prompt
+from app.services.pipeline.audio_analyzer import AudioAnalyzer
+from app.services.pipeline.vision_analyzer import VisionAnalyzer
+from app.services.pipeline.aggregator import Aggregator
 
 # --- STAGE 1: Classification & Strategy ---
 class ClipStrategy(BaseModel):
@@ -138,76 +141,14 @@ class AnalyzerService:
                 
         return all_candidates
 
-    @staticmethod
-    def _filter_and_deduplicate(candidates: list[RawCandidate], transcript: list[dict]) -> list[dict]:
-        processed = []
-        for c in candidates:
-            # Validate indices
-            if c.start_line_id < 0 or c.end_line_id >= len(transcript) or c.start_line_id >= c.end_line_id:
-                continue
-            
-            # Hard Filters (Duration)
-            start_time = transcript[c.start_line_id]['start']
-            end_time = transcript[c.end_line_id]['end']
-            duration = end_time - start_time
-            if duration < 12 or duration > 90:
-                continue
-                
-            # Hard Filters (Hook)
-            if c.metrics.hook < 5:
-                continue
-                
-            # Hard filter: Text starts with "so" or ends with "anyway"
-            start_text = transcript[c.start_line_id]['text'].strip().lower()
-            end_text = transcript[c.end_line_id]['text'].strip().lower()
-            if start_text.startswith("so ") or end_text.endswith(" anyway.") or end_text.endswith(" anyway"):
-                continue
 
-            # Calculate weighted viral score
-            m = c.metrics
-            score = (m.hook * 0.25) + (m.emotion * 0.20) + (m.retention * 0.20) + (m.novelty * 0.15) + (m.shareability * 0.10) + (m.story * 0.10)
-            
-            processed.append({
-                "candidate": c,
-                "score": score,
-                "duration": duration
-            })
-            
-        # Deduplication: sort by score descending, remove overlaps
-        processed.sort(key=lambda x: x["score"], reverse=True)
-        final_candidates = []
-        
-        def is_overlap(c1, c2):
-            overlap_start = max(c1.start_line_id, c2.start_line_id)
-            overlap_end = min(c1.end_line_id, c2.end_line_id)
-            if overlap_start <= overlap_end:
-                overlap_len = overlap_end - overlap_start
-                len1 = c1.end_line_id - c1.start_line_id
-                if overlap_len / max(1, len1) > 0.5: # 50% overlap means they are effectively the same clip idea
-                    return True
-            return False
-
-        for p in processed:
-            overlap = False
-            for f in final_candidates:
-                if is_overlap(p["candidate"], f["candidate"]):
-                    overlap = True
-                    break
-            if not overlap:
-                final_candidates.append(p)
-                
-        # Take top 15 candidates max to pass to reviewer
-        print(f"Stage 3.5: Filtered down to {len(final_candidates[:15])} high-quality unique candidates.")
-        return final_candidates[:15]
-
-    @staticmethod
     async def _review_and_refine(client: AsyncOpenAI, candidates: list[dict], transcript: list[dict], strategy: ClipStrategy, job_id: uuid.UUID) -> list[RefinedCandidate]:
         if not candidates:
             return []
             
         context_blocks = []
         for idx, p in enumerate(candidates):
-            c = p["candidate"]
+            c: RawCandidate = p["candidate"]
             # get +/- 3 lines of context
             start_idx = max(0, c.start_line_id - 3)
             end_idx = min(len(transcript) - 1, c.end_line_id + 3)
@@ -238,9 +179,9 @@ class AnalyzerService:
         return parsed_response.final_clips
 
     @staticmethod
-    async def run(transcript: list[dict], video_duration: int | None, video_topic: str, job_id: uuid.UUID) -> dict:
+    async def run(transcript: list[dict], video_duration: int | None, video_topic: str, job_id: uuid.UUID, video_path: str) -> dict:
         """
-        Multi-stage pipeline: Classify -> Chunk -> Score & Generate -> Filter -> Review & Refine
+        Multimodal pipeline: Audio/Vision/Semantic -> Aggregate -> Review
         """
         if not transcript:
             raise ValueError("Transcript is empty. Cannot run AnalyzerService.")
@@ -249,19 +190,30 @@ class AnalyzerService:
         if not client.api_key:
             raise ValueError("OPENAI_API_KEY is not set in .env. Cannot run AnalyzerService.")
             
-        # Stage 1
-        strategy = await AnalyzerService._classify_and_strategize(client, transcript, video_duration, video_topic, job_id)
+        async def _get_semantic_candidates():
+            # Stage 1
+            strategy = await AnalyzerService._classify_and_strategize(client, transcript, video_duration, video_topic, job_id)
+            # Stage 2
+            chunks = AnalyzerService._chunk_transcript(transcript)
+            # Stage 3
+            raw_candidates = await AnalyzerService._generate_and_score_candidates(client, chunks, strategy, job_id)
+            return strategy, raw_candidates
+
+        print("AnalyzerService: Launching Multimodal pipelines (Audio, Vision, Semantic) in parallel...")
+        results = await asyncio.gather(
+            _get_semantic_candidates(),
+            AudioAnalyzer.run(video_path),
+            VisionAnalyzer.run(video_path)
+        )
+        print("AnalyzerService: All parallel pipelines finished! Starting aggregation...")
         
-        # Stage 2
-        chunks = AnalyzerService._chunk_transcript(transcript)
+        (strategy, raw_candidates), audio_timeline, vision_timeline = results
         
-        # Stage 3
-        raw_candidates = await AnalyzerService._generate_and_score_candidates(client, chunks, strategy, job_id)
+        # Stage 3.5: Aggregation
+        print(f"AnalyzerService: Passing {len(raw_candidates)} semantic candidates to Aggregator...")
+        filtered_candidates = Aggregator.run(raw_candidates, transcript, audio_timeline, vision_timeline)
         
-        # Stage 3.5
-        filtered_candidates = AnalyzerService._filter_and_deduplicate(raw_candidates, transcript)
-        
-        # Stage 4
+        # Stage 4: Review
         final_refined = await AnalyzerService._review_and_refine(client, filtered_candidates, transcript, strategy, job_id)
         
         # Format final output
@@ -269,7 +221,7 @@ class AnalyzerService:
         approved_clips = [c for c in final_refined if c.approved]
         approved_clips.sort(key=lambda x: x.rank or 999)
         
-        for idx, c in enumerate(approved_clips[:7]): # Top 7 max
+        for idx, c in enumerate(approved_clips[:30]): # Top 30 max
             try:
                 start_time = transcript[c.start_line_id]['start']
                 end_time = transcript[c.end_line_id]['end']

@@ -58,9 +58,12 @@ class TranscriberService:
         if not os.path.exists(ffmpeg_path):
             ffmpeg_path = "ffmpeg" # fallback to system path
             
-        cmd = f'"{ffmpeg_path}" -i "{video_path}" -q:a 0 -map a "{audio_path}" -y'
-        process = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-        await process.communicate()
+        cmd = [ffmpeg_path, "-i", video_path, "-q:a", "0", "-map", "a", audio_path, "-y"]
+        def run_ffmpeg():
+            import subprocess
+            subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            
+        await asyncio.to_thread(run_ffmpeg)
         
         # Upload to OpenAI
         print("Uploading audio to OpenAI Whisper API...")
