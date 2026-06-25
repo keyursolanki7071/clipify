@@ -53,7 +53,7 @@ export function JobCard({ job }: JobCardProps) {
           <div className="flex items-center gap-sm text-on-surface-variant font-label-sm text-[12px]">
             <span className="flex items-center gap-1"><Clock size={12} /> {(job.progress || 0).toFixed(0)}%</span>
           </div>
-          {(job.status === 'cancelled' || job.status === 'failed') && (
+          {(job.status === 'cancelled' || job.status === 'failed' || job.status === 'completed') && (
             <button 
               onClick={async (e) => {
                 e.stopPropagation();
@@ -66,7 +66,7 @@ export function JobCard({ job }: JobCardProps) {
               }}
               className="px-3 py-1 bg-primary/20 text-primary border border-primary/30 rounded font-label-sm text-[11px] hover:bg-primary/30 transition-colors z-20"
             >
-              Restart
+              {job.status === 'completed' ? 'Re-run AI' : 'Restart'}
             </button>
           )}
         </div>

@@ -1,6 +1,7 @@
 import os
 import uuid
 import asyncio
+import subprocess
 
 class ClipperService:
     @staticmethod
@@ -18,6 +19,16 @@ class ClipperService:
         if not os.path.exists(ffmpeg_path):
             ffmpeg_path = "ffmpeg" # fallback
             
+        # Clean up any old clips from previous runs
+        job_dir = f"tmp/{job_id}"
+        if os.path.exists(job_dir):
+            for filename in os.listdir(job_dir):
+                if filename.startswith("clip_") and filename.endswith(".mp4"):
+                    try:
+                        os.remove(os.path.join(job_dir, filename))
+                    except OSError:
+                        pass
+                        
         output_paths = []
         
         for index, clip in enumerate(viral_clips['clips']):
@@ -34,11 +45,14 @@ class ClipperService:
             )
             
             print(f"Clipping segment {index} ({start_time} to {end_time}) with 9:16 crop...")
-            process = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            stdout, stderr = await process.communicate()
+            
+            def run_ffmpeg(command):
+                return subprocess.run(command, shell=True, capture_output=True)
+                
+            process = await asyncio.to_thread(run_ffmpeg, cmd)
             
             if process.returncode != 0:
-                print(f"FFMPEG Error on clip {index}: {stderr.decode()}")
+                print(f"FFMPEG Error on clip {index}: {process.stderr.decode()}")
                 raise RuntimeError(f"FFMPEG failed to crop clip {index}")
                 
             output_paths.append({
@@ -48,7 +62,8 @@ class ClipperService:
                 "clip_type": clip.get('clip_type', 'story'),
                 "target_platform": clip.get('target_platform', 'All'),
                 "confidence": clip.get('confidence', 'medium'),
-                "rank": clip.get('rank', index + 1)
+                "rank": clip.get('rank', index + 1),
+                "social_media_caption": clip.get('social_media_caption', '')
             })
             
         return {

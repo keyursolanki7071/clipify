@@ -78,12 +78,14 @@ async def restart_job(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
         
-    if job.status not in ["cancelled", "failed"]:
-        raise HTTPException(status_code=400, detail="Can only restart cancelled or failed jobs")
+    if job.status not in ["cancelled", "failed", "completed"]:
+        raise HTTPException(status_code=400, detail="Can only restart finished or cancelled jobs")
         
     job.status = "pending"
     job.progress = 0.0
     job.error_message = None
+    job.viral_clips = None
+    job.result_paths = None
     # We leave existing metadata/transcript intact so it doesn't have to re-do work it already finished!
     
     await db.commit()

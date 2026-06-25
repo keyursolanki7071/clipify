@@ -51,6 +51,19 @@ export function JobDetails() {
 
         <div className="flex items-center justify-between border-b border-white/5 pb-md mt-lg">
           <h2 className="font-headline-lg-mobile md:font-headline-lg text-on-surface">Your AI Generated Shorts</h2>
+          <button 
+            onClick={async () => {
+              try {
+                await fetch(`http://localhost:8000/api/v1/jobs/${jobId}/restart`, { method: 'POST' });
+                navigate(`/processing?job_id=${jobId}`);
+              } catch (err) {
+                console.error(err);
+              }
+            }}
+            className="px-4 py-2 bg-surface-container-high hover:bg-surface-container-highest border border-white/10 rounded-xl font-label-md text-on-surface-variant hover:text-white transition-colors"
+          >
+            Re-run AI
+          </button>
         </div>
 
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-gutter">
